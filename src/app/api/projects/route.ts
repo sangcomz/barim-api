@@ -153,7 +153,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
             projects,
             meta: {
-                authSource: auth.fromSession ? "session" : "header",
+                authSource: "header",
                 totalCount: projects.length,
                 physicalRepo: PHYSICAL_REPO,
                 owner,
@@ -239,7 +239,7 @@ export async function POST(request: Request) {
                 issueCount: 0
             },
             meta: {
-                authSource: auth.fromSession ? "session" : "header",
+                authSource: "header",
                 createdBy: owner,
                 physicalRepo: PHYSICAL_REPO
             }

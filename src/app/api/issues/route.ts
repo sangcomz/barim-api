@@ -155,7 +155,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
             issues: paginatedIssues,
             meta: {
-                authSource: auth.fromSession ? "session" : "header",
+                authSource: "header",
                 currentPage: currentPage,
                 issuesPerPage,
                 returnedCount: paginatedIssues.length,
@@ -288,7 +288,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
             issue: newIssue,
             meta: {
-                authSource: auth.fromSession ? "session" : "header",
+                authSource: "header",
                 createdBy: owner,
                 physicalRepo: PHYSICAL_REPO,
                 projectLabel

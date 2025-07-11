@@ -44,7 +44,7 @@ export async function POST(
         return NextResponse.json({
             issue: updatedIssue,
             meta: {
-                authSource: auth.fromSession ? "session" : "header",
+                authSource: "header",
                 updatedBy: owner,
                 repository: repositoryName
             }

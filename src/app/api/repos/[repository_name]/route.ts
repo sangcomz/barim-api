@@ -48,7 +48,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ repo
         return NextResponse.json({
             repository: targetRepo,
             meta: {
-                authSource: auth.fromSession ? "session" : "header",
+                authSource: "header",
             }
         });
 

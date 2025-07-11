@@ -44,7 +44,7 @@ export async function POST(
         return NextResponse.json({
             comment: newComment,
             meta: {
-                authSource: auth.fromSession ? "session" : "header",
+                authSource: "header",
                 createdBy: owner,
                 repository: repositoryName,
                 issueNumber: issue_number_int
