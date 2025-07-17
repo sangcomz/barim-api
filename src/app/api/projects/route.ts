@@ -91,15 +91,32 @@ export async function GET(request: Request) {
         // barim-data 레포지토리 존재 확인 및 생성
         await ensureBarimDataRepo(octokit, owner);
 
-        // barim-data 레포지토리의 모든 라벨 가져오기
-        const { data: allLabels } = await octokit.rest.issues.listLabelsForRepo({
-            owner,
-            repo: PHYSICAL_REPO,
-            per_page: 100,
-        });
+        // barim-data 레포지토리의 모든 라벨 가져오기 (페이지네이션 지원)
+        let allLabels: GitHubLabel[] = [];
+        let labelPage = 1;
+
+        while (true) {
+            const { data: labels } = await octokit.rest.issues.listLabelsForRepo({
+                owner,
+                repo: PHYSICAL_REPO,
+                per_page: 100,
+                page: labelPage,
+            });
+
+            if (labels.length === 0) break;
+
+            allLabels = allLabels.concat(labels as GitHubLabel[]);
+            labelPage++;
+
+            // 더 이상 라벨이 없으면 중단
+            if (labels.length < 100) break;
+
+            // 안전장치: 너무 많은 페이지를 가져오지 않도록 제한
+            if (labelPage > 20) break;
+        }
 
         // project:xxx 패턴의 라벨들만 필터링
-        const projectLabels = (allLabels as GitHubLabel[]).filter(label => 
+        const projectLabels = allLabels.filter(label => 
             label.name.startsWith('project:')
         );
 
@@ -108,16 +125,33 @@ export async function GET(request: Request) {
         
         for (const label of projectLabels) {
             try {
-                // 실제 이슈 개수를 정확히 계산하기 위해 모든 이슈를 가져옴
-                const { data: allIssues } = await octokit.rest.issues.listForRepo({
-                    owner,
-                    repo: PHYSICAL_REPO,
-                    labels: label.name,
-                    state: 'all',
-                    per_page: 100,
-                });
+                // 실제 이슈 개수를 정확히 계산하기 위해 모든 이슈를 가져옴 (페이지네이션 지원)
+                let allIssues: GitHubIssue[] = [];
+                let issuePage = 1;
 
-                const issueCount = (allIssues as GitHubIssue[]).filter(issue => {
+                while (true) {
+                    const { data: issues } = await octokit.rest.issues.listForRepo({
+                        owner,
+                        repo: PHYSICAL_REPO,
+                        labels: label.name,
+                        state: 'all',
+                        per_page: 100,
+                        page: issuePage,
+                    });
+
+                    if (issues.length === 0) break;
+
+                    allIssues = allIssues.concat(issues as GitHubIssue[]);
+                    issuePage++;
+
+                    // 더 이상 이슈가 없으면 중단
+                    if (issues.length < 100) break;
+
+                    // 안전장치: 너무 많은 페이지를 가져오지 않도록 제한
+                    if (issuePage > 20) break;
+                }
+
+                const issueCount = allIssues.filter(issue => {
                     // 유효한 상태의 이슈만 카운트 (open이거나 completed로 closed된 것)
                     return issue.state === 'open' || 
                            (issue.state === 'closed' && issue.state_reason === 'completed');

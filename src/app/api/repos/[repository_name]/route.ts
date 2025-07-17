@@ -29,15 +29,36 @@ export async function GET(request: Request, { params }: { params: Promise<{ repo
     const octokit = new Octokit({ auth });
 
     try {
-        // 사용자가 소유한 모든 레포지토리 목록을 가져옵니다.
-        const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({
-            type: "owner",
-            sort: "updated",
-            per_page: 100,
-        });
+        // 사용자가 소유한 모든 레포지토리 목록을 가져옵니다 (페이지네이션 지원)
+        let allRepos: GitHubRepository[] = [];
+        let githubPage = 1;
+        let targetRepo: GitHubRepository | undefined;
 
-        // 이름이 일치하는 레포지토리를 찾습니다.
-        const targetRepo = (repos as GitHubRepository[]).find(repo => repo.name === repository_name);
+        while (!targetRepo) {
+            const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({
+                type: "owner",
+                sort: "updated",
+                per_page: 100,
+                page: githubPage,
+            });
+
+            if (repos.length === 0) break;
+
+            allRepos = allRepos.concat(repos as GitHubRepository[]);
+            
+            // 이름이 일치하는 레포지토리를 찾습니다.
+            targetRepo = (repos as GitHubRepository[]).find(repo => repo.name === repository_name);
+            
+            if (targetRepo) break;
+
+            githubPage++;
+
+            // 더 이상 레포지토리가 없으면 중단
+            if (repos.length < 100) break;
+
+            // 안전장치: 너무 많은 페이지를 가져오지 않도록 제한
+            if (githubPage > 50) break;
+        }
 
         // 일치하는 레포지토리가 없는 경우 404 에러를 반환합니다.
         if (!targetRepo) {
@@ -49,6 +70,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ repo
             repository: targetRepo,
             meta: {
                 authSource: "header",
+                searchedPages: githubPage,
+                totalSearchedRepos: allRepos.length,
             }
         });
 
