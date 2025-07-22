@@ -194,8 +194,22 @@ export async function GET(request: Request) {
                 note: "Projects are based on 'project:xxx' labels from barim-data repository"
             }
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error fetching project labels:", error);
+        
+        // GitHub API 인증 관련 오류 처리
+        if (error?.status === 401 || error?.response?.status === 401) {
+            return NextResponse.json({ 
+                message: "Invalid or expired GitHub token. Please check your authentication credentials." 
+            }, { status: 401 });
+        }
+        
+        if (error?.status === 403 || error?.response?.status === 403) {
+            return NextResponse.json({ 
+                message: "Access forbidden. Please check your GitHub token permissions." 
+            }, { status: 403 });
+        }
+
         return NextResponse.json({ message: "Error fetching project labels" }, { status: 500 });
     }
 }
@@ -278,8 +292,22 @@ export async function POST(request: Request) {
                 physicalRepo: PHYSICAL_REPO
             }
         }, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating project label:", error);
+        
+        // GitHub API 인증 관련 오류 처리
+        if (error?.status === 401 || error?.response?.status === 401) {
+            return NextResponse.json({ 
+                message: "Invalid or expired GitHub token. Please check your authentication credentials." 
+            }, { status: 401 });
+        }
+        
+        if (error?.status === 403 || error?.response?.status === 403) {
+            return NextResponse.json({ 
+                message: "Access forbidden. Please check your GitHub token permissions." 
+            }, { status: 403 });
+        }
+
         return NextResponse.json(
             { message: "Error creating project" },
             { status: 500 }

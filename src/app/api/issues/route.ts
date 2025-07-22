@@ -166,8 +166,22 @@ export async function GET(request: Request) {
                 owner
             }
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error fetching issues:", error);
+        
+        // GitHub API 인증 관련 오류 처리
+        if (error?.status === 401 || error?.response?.status === 401) {
+            return NextResponse.json({ 
+                message: "Invalid or expired GitHub token. Please check your authentication credentials." 
+            }, { status: 401 });
+        }
+        
+        if (error?.status === 403 || error?.response?.status === 403) {
+            return NextResponse.json({ 
+                message: "Access forbidden. Please check your GitHub token permissions." 
+            }, { status: 403 });
+        }
+
         return NextResponse.json({ message: "Error fetching issues" }, { status: 500 });
     }
 }
@@ -294,8 +308,22 @@ export async function POST(request: Request) {
                 projectLabel
             }
         }, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating issue:", error);
+        
+        // GitHub API 인증 관련 오류 처리
+        if (error?.status === 401 || error?.response?.status === 401) {
+            return NextResponse.json({ 
+                message: "Invalid or expired GitHub token. Please check your authentication credentials." 
+            }, { status: 401 });
+        }
+        
+        if (error?.status === 403 || error?.response?.status === 403) {
+            return NextResponse.json({ 
+                message: "Access forbidden. Please check your GitHub token permissions." 
+            }, { status: 403 });
+        }
+
         return NextResponse.json(
             { message: "Error creating issue" },
             { status: 500 }

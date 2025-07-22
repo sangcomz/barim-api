@@ -25,8 +25,6 @@ export async function GET(request: Request) {
     
     const auth = authHeader.substring(7);
     const octokit = new Octokit({ auth });
-    const { searchParams } = new URL(request.url);
-    const page = searchParams.get('page') || '1';
 
     try {
         if (true) {
@@ -64,8 +62,22 @@ export async function GET(request: Request) {
                 }
             });
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error fetching repositories:", error);
+        
+        // GitHub API 인증 관련 오류 처리
+        if (error?.status === 401 || error?.response?.status === 401) {
+            return NextResponse.json({ 
+                message: "Invalid or expired GitHub token. Please check your authentication credentials." 
+            }, { status: 401 });
+        }
+        
+        if (error?.status === 403 || error?.response?.status === 403) {
+            return NextResponse.json({ 
+                message: "Access forbidden. Please check your GitHub token permissions." 
+            }, { status: 403 });
+        }
+
         return NextResponse.json({ message: "Error fetching repositories" }, { status: 500 });
     }
 }
